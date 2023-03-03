@@ -1,0 +1,94 @@
+version: '3.7'
+services:
+######################################################
+# DATABASE SERVICE
+######################################################
+  postgres:
+    build: './docker/postgres'
+    restart: always
+    container_name: postgres
+    logging:
+      driver: "json-file"
+      options:
+          max-file: "5"
+          max-size: "10m"
+    ports:
+      - "32769:5432"
+    #volumes:
+      #- ./mnt/postgres:/var/lib/postgresql/data/pgdata
+    environment:
+      - POSTGRES_USER=postgres1
+      - POSTGRES_PASSWORD=postgres1
+      - POSTGRES_DB=postgredb
+      #- PGDATA=/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "airflow_db", "-U", "airflow" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+######################################################
+# HADOOP SERVICES
+######################################################
+  namenode:
+    build: ./docker/hadoop/hadoop-namenode
+    restart: always
+    container_name: namenode
+    logging:
+      driver: "json-file"
+      options:
+          max-file: "5"
+          max-size: "10m"
+    ports:
+      - "3751:9870"
+    volumes:
+      - ./mnt/hadoop/namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=hadoop_cluster
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "namenode", "9870" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+  datanode1:
+    build: ./docker/hadoop/hadoop-datanode
+    restart: always
+    container_name: datanode1
+    logging:
+      driver: "json-file"
+      options:
+          max-file: "5"
+          max-size: "10m"
+    depends_on:
+      - namenode
+    volumes:
+      - ./mnt/hadoop/datanode1:/hadoop/dfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "datanode1", "9864" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+  datanode2:
+    build: ./docker/hadoop/hadoop-datanode
+    restart: always
+    container_name: datanode2
+    logging:
+      driver: "json-file"
+      options:
+          max-file: "5"
+          max-size: "10m"
+    depends_on:
+      - namenode
+    volumes:
+      - ./mnt/hadoop/datanode2:/hadoop/dfs/data
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "datanode2", "9864" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    
