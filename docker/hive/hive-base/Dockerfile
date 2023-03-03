@@ -1,8 +1,7 @@
 FROM hadoop-base:latest
-LABEL maintainer="MarcLamberti"
 
 ARG HIVE_VERSION
-ENV HIVE_VERSION=${HIVE_VERSION:-3.1.2}
+ENV HIVE_VERSION=${HIVE_VERSION:-3.1.3}
 ENV HIVE_HOME=/opt/hive
 ENV PATH=${HIVE_HOME}/bin:$PATH
 

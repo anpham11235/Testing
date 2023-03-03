@@ -17,15 +17,16 @@ services:
     #volumes:
       #- ./mnt/postgres:/var/lib/postgresql/data/pgdata
     environment:
-      - POSTGRES_USER=postgres1
-      - POSTGRES_PASSWORD=postgres1
+      - POSTGRES_USER=tdp
+      - POSTGRES_PASSWORD=123456
       - POSTGRES_DB=postgredb
       #- PGDATA=/var/lib/postgresql/data/pgdata
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-d", "airflow_db", "-U", "airflow" ]
+      test: [ "CMD", "pg_isready", "-U", "postgredb" ]
       timeout: 45s
       interval: 10s
       retries: 10
+
 ######################################################
 # HADOOP SERVICES
 ######################################################
@@ -48,7 +49,7 @@ services:
       test: [ "CMD", "nc", "-z", "namenode", "9870" ]
       timeout: 45s
       interval: 10s
-      retries: 10
+      retries: 10  
 
   datanode1:
     build: ./docker/hadoop/hadoop-datanode
@@ -71,6 +72,7 @@ services:
       interval: 10s
       retries: 10
 
+
   datanode2:
     build: ./docker/hadoop/hadoop-datanode
     restart: always
@@ -91,4 +93,39 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
+
+
+  resourcemanager:
+    build: ./docker/hadoop/hadoop-resourcemanager
+    container_name: resourcemanager
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870 namenode:9000 datanode1:9864 datanode2:9864
+    ports:
+      - 18088:8088
+    restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "resourcemanager", "8088" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+    
+  nodemanager:
+    build: ./docker/hadoop/hadoop-nodemanager
+    container_name: nodemanager
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870 namenode:9000 datanode1:9864 datanode2:9864 resourcemanager:8088
+    ports:
+      - 18042:8042
+    restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "nodemanager", "8042" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+
+  
+
+
     
